@@ -1,0 +1,25 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.9.34607.119
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SFCD-Battle-Viewer", "SFCD-Battle-Viewer\SFCD-Battle-Viewer.csproj", "{B06DC1BA-9026-4678-BDE4-C71D3141D6DD}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{B06DC1BA-9026-4678-BDE4-C71D3141D6DD}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{B06DC1BA-9026-4678-BDE4-C71D3141D6DD}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{B06DC1BA-9026-4678-BDE4-C71D3141D6DD}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{B06DC1BA-9026-4678-BDE4-C71D3141D6DD}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {5338C155-B4B2-42D8-A365-645A33060780}
+	EndGlobalSection
+EndGlobal

@@ -1,0 +1,13 @@
+Bankd00 = Book 1 intro
+Bankd01 to d16 = Book 1 battles (22 of them)
+Bankd17 to d1f = Dummy files
+Bankd20 = Book 2 intro
+Bankd21 to d38 = Book 2 battles (24 of them)
+Bankd39 = Book 2 credits (uses battle scenes)
+Bankd3a = Book 3 credits (uses map sprites)
+Bankd3b = Book 4 credits (uses map sprites)
+Bankd3c to d3f = Dummy files
+Bankd40 = Book 3 intro
+Bankd41 to d46 = Book 3 battles (6 of them)
+Bankd47 = Book 4 intro
+Bankd48 = Book 4 battle
