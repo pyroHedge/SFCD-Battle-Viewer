@@ -8,7 +8,9 @@ using System.Reflection.Emit;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows;
+using System.Windows.Media;
 using System.Windows.Media.Imaging;
+using System.Windows.Media.Media3D;
 
 namespace SFCD_Battle_Viewer
 {
@@ -127,7 +129,7 @@ namespace SFCD_Battle_Viewer
             Unknown = ByteConversion.ByteToInt(byteChunk.Bytes[10]);
             SpawnCode = ByteConversion.ByteToInt(byteChunk.Bytes[11]);
 
-            int spriteId = isMonster ? UnitId + 32 : UnitId;
+            int spriteId = MapHardCodes.GetSpriteId(isMonster ? UnitId + 32 : UnitId);
             string path = pathBase + pathMapSprite.Replace("000", spriteId.ToString("000"));
             if (System.IO.Path.Exists(path))
             {
@@ -147,7 +149,7 @@ namespace SFCD_Battle_Viewer
         //upper right
 
         public int Type { get; set; }
-        public List<Point> Points { get; set; } = new List<Point>();
+        public PointCollection Points { get; set; } = new PointCollection();
 
         public RegionEntry() { }
 
@@ -184,5 +186,50 @@ namespace SFCD_Battle_Viewer
             Xcord = ByteConversion.ByteToInt(byteChunk.Bytes[0]);
             Ycord = ByteConversion.ByteToInt(byteChunk.Bytes[1]);
         }
+    }
+
+    public class MapHardCodes
+    { 
+        static public int GetSpriteId(int combatantId) => combatantId switch
+        {
+            89 => 32+39, //battle 1
+            90 => 32 + 3,
+            91 => 32 + 5,
+            92 => 32 + 39,
+            93 => 32 + 33,
+            94 => 32 + 6,
+            95 => 32 + 43,
+            96 => 32 + 8,
+            97 => 32 + 34,
+            88 => 79, //battle 10
+            98 => 32 + 41, //battle 11
+            99 => 32 + 13, //battle 12
+            100 => 32 + 12, //battle 13
+            102 => 32 + 20, //battle 18
+            79 => 88, //battle 20
+            _ => combatantId,
+        };
+
+
+        static public Brush GetRegionColor(int regionId) => regionId switch
+        {
+            0 => new SolidColorBrush(Color.FromRgb(51,34,136)),
+            1 => new SolidColorBrush(Color.FromRgb(17, 119, 51)),
+            2 => new SolidColorBrush(Color.FromRgb(221, 204, 119)),
+            3 => new SolidColorBrush(Color.FromRgb(204, 102, 119)),
+            4 => new SolidColorBrush(Color.FromRgb(136, 204, 238)),
+            5 => new SolidColorBrush(Color.FromRgb(170, 68, 153)),
+            6 => new SolidColorBrush(Color.FromRgb(68, 170, 153)),
+            7 => new SolidColorBrush(Color.FromRgb(136, 34, 85)),
+            8 => new SolidColorBrush(Color.FromRgb(51, 34, 136)),
+            9 => new SolidColorBrush(Color.FromRgb(51, 34, 136)),
+            10 => new SolidColorBrush(Color.FromRgb(51, 34, 136)),
+            11 => new SolidColorBrush(Color.FromRgb(51, 34, 136)),
+            12 => new SolidColorBrush(Color.FromRgb(51, 34, 136)),
+            13 => new SolidColorBrush(Color.FromRgb(51, 34, 136)),
+            14 => new SolidColorBrush(Color.FromRgb(51, 34, 136)),
+            15 => new SolidColorBrush(Color.FromRgb(51, 34, 136)),
+            _ => Brushes.Brown,
+        };
     }
 }

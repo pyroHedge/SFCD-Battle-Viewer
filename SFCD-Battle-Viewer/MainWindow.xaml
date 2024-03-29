@@ -15,15 +15,15 @@
                 <RowDefinition Height="5" />
                 <RowDefinition Height="*" />
             </Grid.RowDefinitions>
-            <ListBox x:Name="lstHeroes" SelectionChanged="lstHeroes_SelectionChanged" HorizontalContentAlignment="Stretch">
+            <ListBox x:Name="lstHeroes" SelectionChanged="CombatantList_SelectionChange" HorizontalContentAlignment="Stretch">
                 <ListBox.ItemTemplate>
                     <DataTemplate>
-                        <Grid Height="16" Margin="0,2">
+                        <Grid Height="24" Margin="0,2">
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="30" />
                                 <ColumnDefinition Width="*" />
                             </Grid.ColumnDefinitions>
-                            <Image Source="{Binding Sprite.Source}">
+                            <Image Source="{Binding Image.Source}">
                                 <Image.RenderTransform>
                                     <TransformGroup>
                                         <ScaleTransform ScaleX="1" ScaleY="1"/>
@@ -36,15 +36,15 @@
                 </ListBox.ItemTemplate>
             </ListBox>
             <GridSplitter x:Name="gridSplitter" Grid.Row="1" Height="5" HorizontalAlignment="Stretch" ResizeDirection="Rows" Background="Black" />
-            <ListBox x:Name="lstMonsters" Grid.Row="2" >
+            <ListBox x:Name="lstMonsters" Grid.Row="2" SelectionChanged="CombatantList_SelectionChange" >
                 <ListBox.ItemTemplate>
                     <DataTemplate>
-                        <Grid Height="16" Margin="0,2">
+                        <Grid Height="24" Margin="0,2">
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="30" />
                                 <ColumnDefinition Width="*" />
                             </Grid.ColumnDefinitions>
-                            <Image Source="{Binding Sprite}">
+                            <Image Source="{Binding Image.Source}">
                                 <Image.RenderTransform>
                                     <TransformGroup>
                                         <ScaleTransform ScaleX="1" ScaleY="1"/>
@@ -70,6 +70,7 @@
                 </RadialGradientBrush>
             </Canvas.Background>
             <Image x:Name="imageMap" Canvas.Top="0" Canvas.Left="0" RenderTransformOrigin="0.5,0.5" />
+            <Rectangle x:Name="rectCursor" Height="28" Canvas.Left="36" Stroke="White" Canvas.Top="355" Width="28" RadiusX="3" RadiusY="3" StrokeThickness="2"/>
         </Canvas>
     </DockPanel>
 </Window>
