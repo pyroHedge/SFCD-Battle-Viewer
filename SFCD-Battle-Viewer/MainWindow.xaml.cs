@@ -31,6 +31,7 @@ namespace SFCD_Battle_Viewer
         private List<Image> spriteHeroes = new List<Image>();
         private List<Image> spriteMonsters = new List<Image>();
         private List<Polygon> regions = new List<Polygon>();
+        private List<Rectangle> points = new List<Rectangle>();
 
 
         public MainWindow()
@@ -46,6 +47,10 @@ namespace SFCD_Battle_Viewer
             return BankList.Count > 0;
         }
 
+
+        //------------------------------------------------------------------------------------------
+        // Battle Selection
+        //------------------------------------------------------------------------------------------
 
         private void listBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
@@ -75,15 +80,21 @@ namespace SFCD_Battle_Viewer
             }
         }
 
+        //------------------------------------------------------------------------------------------
+        // Update Sprites and Lists
+        //------------------------------------------------------------------------------------------
+
         public void UpdateSprites()
         {
             if (spriteSheet != null)
             {
                 canvasMap.Children.Clear();
                 canvasMap.Children.Add(imageMap);
+                UpdateRegionsByEntries(spriteSheet.Regions, regions, lstRegions);
+                UpdatePointsByEntries(spriteSheet.Points, points, lstPoints);
                 UpdateSpritesByCombatantEntries(spriteSheet.Heroes, spriteHeroes, lstHeroes);
                 UpdateSpritesByCombatantEntries(spriteSheet.Monsters, spriteMonsters, lstMonsters);
-                UpdateRegionsByEntries(spriteSheet.Regions, regions);
+                canvasMap.Children.Add(rectCursor);
             }
         }
 
@@ -115,26 +126,54 @@ namespace SFCD_Battle_Viewer
 
         }
 
-        private void UpdateRegionsByEntries(List<RegionEntry> regionEntries, List<Polygon> listToUpdate)
+        private void UpdateRegionsByEntries(List<RegionEntry> regionEntries, List<Polygon> listToUpdate, ListBox listBoxToUpdate)
         {
-            if (regionEntries != null)
+            listBoxToUpdate.ItemsSource = regionEntries;
+            listToUpdate.Clear();
+            foreach (RegionEntry regionEntry in regionEntries)
             {
-                regions.Clear();
-                foreach (RegionEntry regionEntry in regionEntries)
+                Polygon polygon1 = new Polygon();
+                Polygon polygon2 = new Polygon();
+                foreach (Point point in regionEntry.Points)
                 {
-                    Polygon polygon = new Polygon();
-                    foreach (Point point in regionEntry.Points)
-                    {
-                        polygon.Points.Add( new Point(point.X * TILE_SIZE_IN_PIXELS, point.Y * TILE_SIZE_IN_PIXELS));
-                    }
-                    Brush brushColor = MapHardCodes.GetRegionColor(listToUpdate.Count);
-                    polygon.Stroke = brushColor;
-                    polygon.Fill = brushColor;
-                    polygon.StrokeThickness = 4;
-                    polygon.Opacity = .25;
-                    canvasMap.Children.Add(polygon);
-                    listToUpdate.Add(polygon);
+                    polygon1.Points.Add(new Point(point.X * TILE_SIZE_IN_PIXELS + TILE_SIZE_IN_PIXELS / 2, point.Y * TILE_SIZE_IN_PIXELS + TILE_SIZE_IN_PIXELS / 2));
+                    polygon2.Points.Add(new Point(point.X * TILE_SIZE_IN_PIXELS + TILE_SIZE_IN_PIXELS / 2, point.Y * TILE_SIZE_IN_PIXELS + TILE_SIZE_IN_PIXELS / 2));
                 }
+                Brush brushColor = HardCodes.GetRegionColor(listToUpdate.Count / 2);
+                polygon1.Fill = brushColor;
+                polygon1.StrokeThickness = 4;
+                polygon1.Opacity = .25;
+                polygon1.Visibility = Visibility.Collapsed;
+                canvasMap.Children.Add(polygon1);
+                listToUpdate.Add(polygon1);
+
+                polygon2.Stroke = brushColor;
+                polygon2.Fill = null;
+                polygon2.StrokeThickness = 4;
+                polygon2.Visibility = Visibility.Collapsed;
+                canvasMap.Children.Add(polygon2);
+                listToUpdate.Add(polygon2);
+            }
+        }
+
+        private void UpdatePointsByEntries(List<PointEntry> pointEntries, List<Rectangle> listToUpdate, ListBox listBoxToUpdate)
+        {
+            listBoxToUpdate.ItemsSource = pointEntries;
+            listToUpdate.Clear();
+            foreach (PointEntry pointEntry in pointEntries)
+            {
+                Rectangle rect = new Rectangle();
+                Brush brushColor = HardCodes.GetRegionColor(listToUpdate.Count);
+                rect.Fill = brushColor;
+                rect.Stroke = brushColor;
+                rect.StrokeThickness = 4;
+                rect.Visibility = Visibility.Collapsed;
+                rect.Width = TILE_SIZE_IN_PIXELS;
+                rect.Height = TILE_SIZE_IN_PIXELS;
+                Canvas.SetLeft(rect, pointEntry.Xcord * TILE_SIZE_IN_PIXELS);
+                Canvas.SetTop(rect, pointEntry.Ycord * TILE_SIZE_IN_PIXELS);
+                canvasMap.Children.Add(rect);
+                listToUpdate.Add(rect);
             }
         }
 
@@ -146,65 +185,55 @@ namespace SFCD_Battle_Viewer
         {
             if (e.RemovedItems.Count > 0)
             {
-                //foreach (CombatantListBoxItemTemplate x in e.RemovedItems)
-                //{
-                //    x.Image.Effect = null;
-                //}
-                //rectCursor.Visibility = Visibility.Collapsed;
+                foreach (Polygon p in regions)
+                {
+                    p.Visibility = Visibility.Collapsed;
+                }
+                rectCursor.Visibility = Visibility.Collapsed;
             }
             if (e.AddedItems.Count > 0)
             {
-                //DropShadowEffect dropShadow = new DropShadowEffect()
-                //{
-                //    Color = Colors.White,
-                //    ShadowDepth = 0,
-                //    BlurRadius = 8,
-                //    RenderingBias = RenderingBias.Performance,
-                //};
-                //foreach (CombatantListBoxItemTemplate x in e.AddedItems)
-                //{
-                //    x.Image.Effect = dropShadow;
-                //}
-
-                //CombatantListBoxItemTemplate first = (CombatantListBoxItemTemplate)(e.AddedItems[0]);
-                //Canvas.SetLeft(rectCursor, first.Combatant.Xcord * TILE_SIZE_IN_PIXELS - 2);
-                //Canvas.SetTop(rectCursor, first.Combatant.Ycord * TILE_SIZE_IN_PIXELS - 2);
-                //rectCursor.Visibility = Visibility.Visible;
-
-                SelectCombatant(((CombatantListBoxItemTemplate)e.AddedItems[0]).Image);
+                SelectCombatant((CombatantListBoxItemTemplate)e.AddedItems[0]);
             }
         }
 
         private void imageCombatant_MouseLeftButtonUp(object sender, MouseButtonEventArgs e)
         {
             //Update the lists
-            lstHeroes.SelectedItem = null;
             int index = spriteHeroes.IndexOf((Image)sender);
             if (index >= 0)
             {
-                lstHeroes.SelectedIndex = index;
-            }
-            else
-            {
-                //lstHeroes.SelectedIndex = -1;
+                if (lstHeroes.SelectedIndex != -1 && lstHeroes.SelectedIndex == index)
+                {
+                    lstHeroes.SelectedIndex = -1;
+                }
+                else
+                {
+                    lstHeroes.SelectedItem = null;
+                    lstHeroes.SelectedIndex = index;
+                }
             }
 
-            lstMonsters.SelectedItem = null;
             index = spriteMonsters.IndexOf((Image)sender);
             if (index >= 0)
             {
-                lstMonsters.SelectedIndex = index;
+                if (lstMonsters.SelectedIndex != -1 && lstMonsters.SelectedIndex == index)
+                {
+                    lstMonsters.SelectedIndex = -1;
+                }
+                else
+                {
+                    lstMonsters.SelectedItem = null;
+                    lstMonsters.SelectedIndex = index;
+                }
             }
-            else
-            {
-                //lstHeroes.SelectedIndex = -1;
-            }
-            //No need to call the SelectCombatant because that will be called automatically by the lists during the selection event.
-            //SelectCombatant((Image)sender);
         }
 
-        private void SelectCombatant(Image image)
+        private void SelectCombatant(CombatantListBoxItemTemplate item)
         {
+            Image image = item.Image;
+            CombatantEntry combatant = item.Combatant;
+
             //Select image
             if (image == null)
             {
@@ -216,7 +245,119 @@ namespace SFCD_Battle_Viewer
                 Canvas.SetTop(rectCursor, Canvas.GetTop(image) - 2);
                 rectCursor.Visibility = Visibility.Visible;
             }
+
+            //Select regions
+            lstRegions.UnselectAll();
+            if (combatant.IsHero == false)
+            {
+                if (combatant.TriggerRegion1 < 15)
+                {
+                    lstRegions.SelectedItems.Add(lstRegions.Items[combatant.TriggerRegion1]);
+                }
+                if (combatant.TriggerRegion2 < 15)
+                {
+                    lstRegions.SelectedItems.Add(lstRegions.Items[combatant.TriggerRegion2]);
+                }
+            }
+
+            //Select points
+            lstPoints.UnselectAll();
+            if (combatant.IsHero == false)
+            {
+                if (combatant.SpecialMove1 == CombatantEntry.SpecialMoveType.Point)
+                {
+                    lstPoints.SelectedItems.Add(lstPoints.Items[combatant.SpecialMoveTarget1]);
+                }
+                if (combatant.SpecialMove2 == CombatantEntry.SpecialMoveType.Point)
+                {
+                    lstPoints.SelectedItems.Add(lstPoints.Items[combatant.SpecialMoveTarget2]);
+                }
+            }
+
+            //Highlight force members
+            foreach (CombatantListBoxItemTemplate x in lstHeroes.Items)
+            {
+                x.Image.Effect = null;
+            }
+            if (combatant.IsHero == false)
+            {
+                if (combatant.SpecialMove1 == CombatantEntry.SpecialMoveType.ForceMember)
+                {
+                    AddShadow(((CombatantListBoxItemTemplate)lstHeroes.Items[combatant.SpecialMoveTarget1]).Image);
+                }
+                if (combatant.SpecialMove2 == CombatantEntry.SpecialMoveType.ForceMember)
+                {
+                    AddShadow(((CombatantListBoxItemTemplate)lstHeroes.Items[combatant.SpecialMoveTarget2]).Image);
+                }
+            }
+
+            //Highlight monsters
+            foreach (CombatantListBoxItemTemplate x in lstMonsters.Items)
+            {
+                x.Image.Effect = null;
+            }
+            if (combatant.IsHero == false)
+            {
+                if (combatant.SpecialMove1 == CombatantEntry.SpecialMoveType.Monster)
+                {
+                    AddShadow(((CombatantListBoxItemTemplate)lstMonsters.Items[combatant.SpecialMoveTarget1]).Image);
+                }
+                if (combatant.SpecialMove2 == CombatantEntry.SpecialMoveType.Monster)
+                {
+                    AddShadow(((CombatantListBoxItemTemplate)lstMonsters.Items[combatant.SpecialMoveTarget2]).Image);
+                }
+            }
+
+            //Show combatant data
+            gridCombatant.ItemsSource = item.Combatant.GetCombatantData();
+            textAiDescription.Text = item.Combatant.GetAiDescription();
         }
 
+        //Add a standard drop shadow effect to targets of the special AI move
+        private void AddShadow(Image image)
+        {
+            DropShadowEffect dropShadow = new DropShadowEffect()
+            {
+                Color = Colors.Black,
+                ShadowDepth = 4,
+                BlurRadius = 4,
+                RenderingBias = RenderingBias.Performance,
+            };
+            image.Effect = dropShadow;
+        }
+
+
+        //------------------------------------------------------------------------------------------
+        // Region Selection
+        //------------------------------------------------------------------------------------------
+        private void lstRegions_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            foreach (RegionEntry x in e.RemovedItems)
+            {
+                regions[x.Id * 2].Visibility = Visibility.Collapsed;
+                regions[x.Id * 2 + 1].Visibility = Visibility.Collapsed;
+            }
+            foreach (RegionEntry x in e.AddedItems)
+            {
+                regions[x.Id * 2].Visibility = Visibility.Visible;
+                regions[x.Id * 2 + 1].Visibility = Visibility.Visible;
+            }
+        }
+
+
+        //------------------------------------------------------------------------------------------
+        // Point Selection
+        //------------------------------------------------------------------------------------------
+        private void lstPoints_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            foreach (PointEntry x in e.RemovedItems)
+            {
+                points[x.Id].Visibility = Visibility.Collapsed;
+            }
+            foreach (PointEntry x in e.AddedItems)
+            {
+                points[x.Id].Visibility = Visibility.Visible;
+            }
+        }
     }
 }

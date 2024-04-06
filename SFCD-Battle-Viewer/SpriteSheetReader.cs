@@ -1,5 +1,6 @@
 ﻿using PyroPatchViewer;
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.IO;
@@ -8,6 +9,8 @@ using System.Reflection.Emit;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows;
+using System.Windows.Controls;
+using System.Windows.Documents;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Media.Media3D;
@@ -42,28 +45,28 @@ namespace SFCD_Battle_Viewer
                 Heroes.Clear();
                 for (int i = 0; i < heroCount; i++)
                 {
-                    Heroes.Add(new CombatantEntry(file.GetByteChunk(n, 12), pathBase, false));
+                    Heroes.Add(new CombatantEntry(file.GetByteChunk(n, 12), pathBase, true));
                     n += 12;
                 }
                 //Monsters
                 Monsters.Clear();
                 for (int i = 0; i < monsterCount; i++)
                 {
-                    Monsters.Add(new CombatantEntry(file.GetByteChunk(n, 12), pathBase, true));
+                    Monsters.Add(new CombatantEntry(file.GetByteChunk(n, 12), pathBase, false));
                     n += 12;
                 }
                 //Regions
                 Regions.Clear();
                 for (int i = 0; i < regionCount; i++)
                 {
-                    Regions.Add(new RegionEntry(file.GetByteChunk(n, 12)));
+                    Regions.Add(new RegionEntry(file.GetByteChunk(n, 12), i));
                     n += 12;
                 }
                 //Points
                 Points.Clear();
                 for (int i = 0; i < pointCount; i++)
                 {
-                    Points.Add(new PointEntry(file.GetByteChunk(n, 2)));
+                    Points.Add(new PointEntry(file.GetByteChunk(n, 2), i));
                     n += 2;
                 }
             }
@@ -73,6 +76,14 @@ namespace SFCD_Battle_Viewer
 
     public class CombatantEntry
     {
+        public enum SpecialMoveType
+        {
+            ForceMember,
+            Point = 2,
+            Monster = 4,
+            None = 7
+        }
+
         //1  Unit ID
         //2  X Coordinate(starting position on map)
         //3  Y Coordinate(starting position on map)
@@ -94,12 +105,17 @@ namespace SFCD_Battle_Viewer
         public int AiCode { get; set; }
         public int ItemCondition { get; set; }
         public int Item { get; set; }
-        public int SpecialAi1 { get; set; }
         public int TriggerRegion1 { get; set; }
-        public int SpecialAi2 { get; set; }
         public int TriggerRegion2 { get; set; }
+        public byte SpecialAi1 { get; set; }
+        public SpecialMoveType SpecialMove1 { get; set; }
+        public int SpecialMoveTarget1 { get; set; }
+        public byte SpecialAi2 { get; set; }
+        public SpecialMoveType SpecialMove2 { get; set; }
+        public int SpecialMoveTarget2 { get; set; }
         public int Unknown { get; set; }
         public int SpawnCode { get; set; }
+        public bool IsHero { get; set; }
         public BitmapImage Bitmap { get; set; } = null;
 
         public CombatantEntry() { }
@@ -114,22 +130,29 @@ namespace SFCD_Battle_Viewer
             return UnitId.ToString() + "," + Xcord.ToString() + "," + Ycord.ToString() + "," + AiCode.ToString();
         }
 
-        public void PopulateFromByteChunk(ByteChunk byteChunk, string pathBase, bool isMonster = false)
+        public void PopulateFromByteChunk(ByteChunk byteChunk, string pathBase, bool isHero = false)
         {
+
             UnitId = ByteConversion.ByteToInt(byteChunk.Bytes[0]);
             Xcord = ByteConversion.ByteToInt(byteChunk.Bytes[1]);
             Ycord = ByteConversion.ByteToInt(byteChunk.Bytes[2]);
             AiCode = ByteConversion.ByteToInt(byteChunk.Bytes[3]);
             ItemCondition = ByteConversion.ByteToInt(byteChunk.Bytes[4]);
             Item = ByteConversion.ByteToInt(byteChunk.Bytes[5]);
-            SpecialAi1 = ByteConversion.ByteToInt(byteChunk.Bytes[6]);
+            SpecialAi1 = byteChunk.Bytes[6];
+            SpecialMove1 = GetSpecialMove(SpecialAi1);
+            SpecialMoveTarget1 = GetSpecialMoveTarget(SpecialAi1);
             TriggerRegion1 = ByteConversion.ByteToInt(byteChunk.Bytes[7]);
-            SpecialAi2 = ByteConversion.ByteToInt(byteChunk.Bytes[8]);
+            SpecialAi2 = byteChunk.Bytes[8];
+            SpecialMove2 = GetSpecialMove(SpecialAi2);
+            SpecialMoveTarget2 = GetSpecialMoveTarget(SpecialAi2);
             TriggerRegion2 = ByteConversion.ByteToInt(byteChunk.Bytes[9]);
             Unknown = ByteConversion.ByteToInt(byteChunk.Bytes[10]);
             SpawnCode = ByteConversion.ByteToInt(byteChunk.Bytes[11]);
 
-            int spriteId = MapHardCodes.GetSpriteId(isMonster ? UnitId + 32 : UnitId);
+            IsHero = isHero;
+
+            int spriteId = HardCodes.GetSpriteId(isHero ? UnitId : UnitId + 32);
             string path = pathBase + pathMapSprite.Replace("000", spriteId.ToString("000"));
             if (System.IO.Path.Exists(path))
             {
@@ -137,6 +160,211 @@ namespace SFCD_Battle_Viewer
             }
         }
 
+        private static SpecialMoveType GetSpecialMove(byte specialAi)
+        {
+            BitArray bitArray = new BitArray(new byte[] { specialAi });
+            int[] array = new int[1];
+            bitArray.RightShift(5).CopyTo(array, 0);
+            return (SpecialMoveType)array[0];
+        }
+
+        private static int GetSpecialMoveTarget(byte specialAi)
+        {
+            BitArray bitArray = new BitArray(new byte[] { specialAi });
+            bitArray[5] = false;
+            bitArray[6] = false;
+            bitArray[7] = false;
+            int[] array = new int[1];
+            bitArray.CopyTo(array, 0);
+            return array[0];
+        }
+
+        private static string GetBitString(byte value)
+        {
+            BitArray bitArray = new BitArray(new byte[] { value });
+            StringBuilder sb = new StringBuilder();
+            foreach (bool x in bitArray)
+            {
+                sb.Append(x ? "1" : "0");
+            }
+            return sb.ToString();
+        }
+
+        public List<CombatantData> GetCombatantData()
+        {
+            List<CombatantData> result = new List<CombatantData>();
+
+            var properties = this.GetType().GetProperties();
+            foreach (var p in properties)
+            {
+                string name = p.Name;
+                var value = p.GetValue(this, null);
+
+                if (value == null)
+                {
+                    value = "";
+                }
+                if (value.GetType() == typeof(int) || value.GetType() == typeof(string) || value.GetType() == typeof(SpecialMoveType))
+                {
+                    result.Add(new CombatantData(name, value.ToString()));
+                }
+                else if (value.GetType() == typeof(byte))
+                {
+                    result.Add(new CombatantData(name, GetBitString((byte)value)));
+                }
+            }
+
+            return result;
+        }
+
+        /// <summary>
+        /// Get a long-form description of how the monster's AI functions.
+        /// </summary>
+        /// <returns></returns>
+        public string GetAiDescription()
+        {
+            StringBuilder sb = new StringBuilder();
+
+            //Trigger region
+            sb.AppendLine("AI TRIGGERS");
+            sb.AppendLine();
+            sb.AppendLine(GetAiTriggers());
+
+            //AI Code Summary
+            sb.AppendLine("AI SUMMARY");
+            sb.AppendLine();
+            sb.AppendLine(GetAiSummary());
+
+            //AI Code Description
+            sb.AppendLine("AI DETAILS");
+            sb.AppendLine();
+            sb.AppendLine(GetAiDetail());
+
+            return sb.ToString();
+        }
+
+        /// <summary>
+        /// Print the full AI description to a text block with text formatting.
+        /// </summary>
+        /// <param name="textBlock"></param>
+        public void PrintAiDescription(TextBlock textBlock)
+        {
+            //Trigger region
+            textBlock.Inlines.Add(new Run("Trigger Rules") { TextDecorations = TextDecorations.Underline, FontWeight = FontWeights.Bold });
+            textBlock.Inlines.Add(GetAiTriggers() );
+
+            //AI Code Summary
+
+
+            //AI Code Description
+        }
+
+        public string GetAiTriggers()
+        {
+            if (IsHero)
+            {
+                return "Human controlled.";
+            }
+            else
+            {
+                StringBuilder sb = new StringBuilder();
+                if (TriggerRegion1 < 15)
+                {
+                    if (TriggerRegion2 < 15)
+                    {
+                        sb.AppendLine(string.Format("Do not move until a force member is within region {0} or region {1} at the start of a round.", TriggerRegion1, TriggerRegion2));
+                    }
+                    else
+                    {
+                        sb.AppendLine(string.Format("Do not move until a force member is within region {0} at the start of a round.", TriggerRegion1));
+                    }
+                }
+                else
+                {
+                    if (TriggerRegion2 < 15)
+                    {
+                        sb.AppendLine(string.Format("Do not move until a force member is within region {0} at the start of a round.", TriggerRegion2));
+                    }
+                    else
+                    {
+                        sb.AppendLine("Always active.");
+                    }
+                }
+                sb.AppendLine();
+                return sb.ToString();
+            }
+        }
+
+        public string GetAiSummary()
+        {
+            if (IsHero)
+            {
+                return "Human controlled.";
+            }
+            else
+            {
+                StringBuilder sb = new StringBuilder();
+                foreach (HardCodes.AiCommand command in HardCodes.GetAiCommands(AiCode))
+                {
+                    sb.AppendLine(command.ToString());
+                }
+                sb.AppendLine();
+                return sb.ToString();
+            }
+        }
+
+        public string GetAiDetail()
+        {
+            if (IsHero)
+            {
+                return "Human controlled.";
+            }
+            else
+            {
+                StringBuilder sb = new StringBuilder();
+                int n = 0;
+                foreach (HardCodes.AiCommand command in HardCodes.GetAiCommands(AiCode))
+                {
+                    n++;
+                    switch (command)
+                    {
+                        case HardCodes.AiCommand.Heal:
+                            sb.AppendLine("Check " + n + ": If targets reachable by highest level heal spell have 66% or less remaining health, heal them. Prioritizes leaders, then based upon move type. Will target multiple if it includes the highest priority targets.");
+                            break;
+                        case HardCodes.AiCommand.Attack:
+                            sb.AppendLine("Check " + n + ": Attack physically or with magic, if targets are in range.");
+                            break;
+                        case HardCodes.AiCommand.BuffDebuff:
+                            sb.AppendLine("Check " + n + ": Buff or debuff, if targets are in range. Dispel requires two targets with MP. Muddle 2 requires three targets. Boost 2 requires two targets.");
+                            break;
+                        case HardCodes.AiCommand.Move:
+                            sb.AppendLine("Check " + n + ": Move two spaces closer to the force, if possible.");
+                            break;
+                        case HardCodes.AiCommand.SpecialMove:
+                            sb.AppendLine(string.Format("Check " + n + ": Move towards {0} {1} with maximum movement (if necessary). Will attack or use magic if targets are within a 9x9 grid centered on the monster at the start of the turn.", SpecialMove1.ToString(), SpecialMoveTarget1));
+                            if (SpecialMove1 == SpecialMoveType.Point)
+                            {
+                                sb.Append(" Exception is if the monster starts the turn on the desired point. In that case, this check is skipped.");
+                            }
+                            break;
+                        case HardCodes.AiCommand.Stay:
+                            sb.AppendLine("Check " + n + ": Stay in place and do not move.");
+                            break;
+                    }
+                    sb.AppendLine();
+                }
+                return sb.ToString();
+            }
+        }
+    }
+
+    public class CombatantData
+    {
+        public string Stat { get; set; }
+        public string Value { get; set; }
+
+        public CombatantData() { }
+        public CombatantData(string stat, string value) { Stat = stat; Value = value; }
     }
 
 
@@ -150,12 +378,14 @@ namespace SFCD_Battle_Viewer
 
         public int Type { get; set; }
         public PointCollection Points { get; set; } = new PointCollection();
+        public int Id { get; set; }
 
         public RegionEntry() { }
 
-        public RegionEntry(ByteChunk byteChunk)
+        public RegionEntry(ByteChunk byteChunk, int id)
         {
             PopulateFromByteChunk(byteChunk);
+            Id = id;
         }
 
         public void PopulateFromByteChunk(ByteChunk byteChunk)
@@ -167,18 +397,25 @@ namespace SFCD_Battle_Viewer
                 Points.Add(new Point(ByteConversion.ByteToInt(byteChunk.Bytes[i]), ByteConversion.ByteToInt(byteChunk.Bytes[i + 1])));
             }
         }
+
+        public override string ToString()
+        {
+            return "Region " + Id;
+        }
     }
 
     public class PointEntry
     {
         public int Xcord { get; set; }
         public int Ycord { get; set; }
+        public int Id { get; set; }
 
         public PointEntry() { }
 
-        public PointEntry(ByteChunk byteChunk)
+        public PointEntry(ByteChunk byteChunk, int id)
         {
             PopulateFromByteChunk(byteChunk);
+            Id = id;
         }
 
         public void PopulateFromByteChunk(ByteChunk byteChunk)
@@ -186,50 +423,10 @@ namespace SFCD_Battle_Viewer
             Xcord = ByteConversion.ByteToInt(byteChunk.Bytes[0]);
             Ycord = ByteConversion.ByteToInt(byteChunk.Bytes[1]);
         }
-    }
 
-    public class MapHardCodes
-    { 
-        static public int GetSpriteId(int combatantId) => combatantId switch
+        public override string ToString()
         {
-            89 => 32+39, //battle 1
-            90 => 32 + 3,
-            91 => 32 + 5,
-            92 => 32 + 39,
-            93 => 32 + 33,
-            94 => 32 + 6,
-            95 => 32 + 43,
-            96 => 32 + 8,
-            97 => 32 + 34,
-            88 => 79, //battle 10
-            98 => 32 + 41, //battle 11
-            99 => 32 + 13, //battle 12
-            100 => 32 + 12, //battle 13
-            102 => 32 + 20, //battle 18
-            79 => 88, //battle 20
-            _ => combatantId,
-        };
-
-
-        static public Brush GetRegionColor(int regionId) => regionId switch
-        {
-            0 => new SolidColorBrush(Color.FromRgb(51,34,136)),
-            1 => new SolidColorBrush(Color.FromRgb(17, 119, 51)),
-            2 => new SolidColorBrush(Color.FromRgb(221, 204, 119)),
-            3 => new SolidColorBrush(Color.FromRgb(204, 102, 119)),
-            4 => new SolidColorBrush(Color.FromRgb(136, 204, 238)),
-            5 => new SolidColorBrush(Color.FromRgb(170, 68, 153)),
-            6 => new SolidColorBrush(Color.FromRgb(68, 170, 153)),
-            7 => new SolidColorBrush(Color.FromRgb(136, 34, 85)),
-            8 => new SolidColorBrush(Color.FromRgb(51, 34, 136)),
-            9 => new SolidColorBrush(Color.FromRgb(51, 34, 136)),
-            10 => new SolidColorBrush(Color.FromRgb(51, 34, 136)),
-            11 => new SolidColorBrush(Color.FromRgb(51, 34, 136)),
-            12 => new SolidColorBrush(Color.FromRgb(51, 34, 136)),
-            13 => new SolidColorBrush(Color.FromRgb(51, 34, 136)),
-            14 => new SolidColorBrush(Color.FromRgb(51, 34, 136)),
-            15 => new SolidColorBrush(Color.FromRgb(51, 34, 136)),
-            _ => Brushes.Brown,
-        };
+            return "Point " + Id;
+        }
     }
 }

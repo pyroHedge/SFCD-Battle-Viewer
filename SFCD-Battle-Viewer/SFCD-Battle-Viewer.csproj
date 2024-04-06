@@ -10,17 +10,11 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <None Remove="1-layout.png" />
     <None Remove="mapsprite000-2-0.png" />
   </ItemGroup>
 
   <ItemGroup>
     <PackageReference Include="System.Drawing.Common" Version="8.0.3" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <Resource Include="1-layout.png" />
-    <Resource Include="mapsprite000-2-0.png" />
   </ItemGroup>
 
 </Project>

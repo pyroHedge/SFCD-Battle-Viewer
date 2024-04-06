@@ -8,55 +8,80 @@
         Title="MainWindow" Height="450" Width="800"
         DataContext="{Binding RelativeSource={RelativeSource Self}}">
     <DockPanel>
-        <ListBox x:Name="listBox" Width="200" DockPanel.Dock="Left" ItemsSource="{Binding Path=BankList}" SelectionChanged="listBox_SelectionChanged"/>
-        <Grid DockPanel.Dock="Left" Width="200">
-            <Grid.RowDefinitions>
-                <RowDefinition Height="*" />
-                <RowDefinition Height="5" />
-                <RowDefinition Height="*" />
-            </Grid.RowDefinitions>
-            <ListBox x:Name="lstHeroes" SelectionChanged="CombatantList_SelectionChange" HorizontalContentAlignment="Stretch">
-                <ListBox.ItemTemplate>
-                    <DataTemplate>
-                        <Grid Height="24" Margin="0,2">
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="30" />
-                                <ColumnDefinition Width="*" />
-                            </Grid.ColumnDefinitions>
-                            <Image Source="{Binding Image.Source}">
-                                <Image.RenderTransform>
-                                    <TransformGroup>
-                                        <ScaleTransform ScaleX="1" ScaleY="1"/>
-                                    </TransformGroup>
-                                </Image.RenderTransform>
-                            </Image>
-                            <TextBlock Grid.Column="1" Text="{Binding Text}" />
-                        </Grid>
-                    </DataTemplate>
-                </ListBox.ItemTemplate>
-            </ListBox>
-            <GridSplitter x:Name="gridSplitter" Grid.Row="1" Height="5" HorizontalAlignment="Stretch" ResizeDirection="Rows" Background="Black" />
-            <ListBox x:Name="lstMonsters" Grid.Row="2" SelectionChanged="CombatantList_SelectionChange" >
-                <ListBox.ItemTemplate>
-                    <DataTemplate>
-                        <Grid Height="24" Margin="0,2">
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="30" />
-                                <ColumnDefinition Width="*" />
-                            </Grid.ColumnDefinitions>
-                            <Image Source="{Binding Image.Source}">
-                                <Image.RenderTransform>
-                                    <TransformGroup>
-                                        <ScaleTransform ScaleX="1" ScaleY="1"/>
-                                    </TransformGroup>
-                                </Image.RenderTransform>
-                            </Image>
-                            <TextBlock Grid.Column="1" Text="{Binding Text}" />
-                        </Grid>
-                    </DataTemplate>
-                </ListBox.ItemTemplate>
-            </ListBox>
-        </Grid>
+        <ListBox x:Name="listBox" Width="150" DockPanel.Dock="Left" ItemsSource="{Binding Path=BankList}" SelectionChanged="listBox_SelectionChanged"/>
+        <ScrollViewer VerticalScrollBarVisibility="Auto">
+            <Grid DockPanel.Dock="Left" Width="150">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="*" />
+                    <RowDefinition Height="5" />
+                    <RowDefinition Height="25" />
+                    <RowDefinition Height="25" />
+                </Grid.RowDefinitions>
+                <DockPanel>
+                    <Expander Header="Force Members" DockPanel.Dock="Top" VerticalAlignment="Top" IsExpanded="True">
+                        <ListBox x:Name="lstHeroes" SelectionChanged="CombatantList_SelectionChange" Background="#FFADD0B0">
+                            <ListBox.ItemTemplate>
+                                <DataTemplate>
+                                    <Grid Height="24" Margin="0,2">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="30" />
+                                            <ColumnDefinition Width="*" />
+                                        </Grid.ColumnDefinitions>
+                                        <Image Source="{Binding Image.Source}">
+                                            <Image.RenderTransform>
+                                                <TransformGroup>
+                                                    <ScaleTransform ScaleX="1" ScaleY="1"/>
+                                                </TransformGroup>
+                                            </Image.RenderTransform>
+                                        </Image>
+                                        <TextBlock Grid.Column="1" Text="{Binding Text}" />
+                                    </Grid>
+                                </DataTemplate>
+                            </ListBox.ItemTemplate>
+                        </ListBox>
+                    </Expander>
+                    <Expander Header="Monsters" DockPanel.Dock="Top" VerticalAlignment="Top" IsExpanded="True">
+                        <ListBox x:Name="lstMonsters" SelectionChanged="CombatantList_SelectionChange" Background="#FFD0ADAD">
+                            <ListBox.ItemTemplate>
+                                <DataTemplate>
+                                    <Grid Height="24" Margin="0,2">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="30" />
+                                            <ColumnDefinition Width="*" />
+                                        </Grid.ColumnDefinitions>
+                                        <Image Source="{Binding Image.Source}">
+                                            <Image.RenderTransform>
+                                                <TransformGroup>
+                                                    <ScaleTransform ScaleX="1" ScaleY="1"/>
+                                                </TransformGroup>
+                                            </Image.RenderTransform>
+                                        </Image>
+                                        <TextBlock Grid.Column="1" Text="{Binding Text}" />
+                                    </Grid>
+                                </DataTemplate>
+                            </ListBox.ItemTemplate>
+                        </ListBox>
+                    </Expander>
+                    <Expander Header="Regions" DockPanel.Dock="Top" VerticalAlignment="Top" IsExpanded="True">
+                        <ListBox x:Name="lstRegions" SelectionChanged="lstRegions_SelectionChanged" SelectionMode="Multiple" />
+                    </Expander>
+                    <Expander Header="Points" DockPanel.Dock="Top" VerticalAlignment="Top" IsExpanded="True">
+                        <ListBox x:Name="lstPoints" SelectionChanged="lstPoints_SelectionChanged" SelectionMode="Multiple" />
+                    </Expander>
+                </DockPanel>
+                <GridSplitter Grid.Row="1" Height="5" HorizontalAlignment="Stretch" ResizeDirection="Rows" Background="Black" />
+                <TextBlock Text="Force Members" Grid.Row="2" Background="#FFADD0B0" TextAlignment="Center"  />
+                <TextBlock Text="Monsters" Grid.Row="3" Background="#FFD0ADAD" TextAlignment="Center"  />
+            
+            </Grid>
+        </ScrollViewer>
+        <ScrollViewer VerticalScrollBarVisibility="Visible">
+            <StackPanel DockPanel.Dock="Left" Width="220">
+                <TextBlock Text="Combatant Data" TextAlignment="Center" />
+                <DataGrid x:Name="gridCombatant" Grid.Row="1" ItemsSource="{Binding Path=spriteSheet}" IsReadOnly="True" />
+                <TextBlock x:Name="textAiDescription" Grid.Row="2" TextAlignment="Left" TextWrapping="Wrap" Margin="3,3,3,0"/>
+            </StackPanel>
+        </ScrollViewer>
         <Canvas x:Name="canvasMap"  DockPanel.Dock="Right" ScrollViewer.HorizontalScrollBarVisibility="Auto" ScrollViewer.VerticalScrollBarVisibility="Auto" RenderTransformOrigin="0.5,0.5">
             <Canvas.RenderTransform>
                 <TransformGroup>
