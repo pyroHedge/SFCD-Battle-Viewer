@@ -24,9 +24,8 @@ namespace SFCD_Battle_Viewer
         const string pathMapImage = @"\map\1-layout.png";
         const int TILE_SIZE_IN_PIXELS = 24; //how large the map tiles are at full size
 
-        public ObservableCollection<string> BankList { get; set; } = new ObservableCollection<string>();
-
-        private List<string> BankDirs = new List<string>();
+        public ObservableCollection<BankDefinition> BankList { get; set; } = new ObservableCollection<BankDefinition>();
+        private string[] BankDirs;
         private SpriteSheet spriteSheet = new SpriteSheet();
         private List<Image> spriteHeroes = new List<Image>();
         private List<Image> spriteMonsters = new List<Image>();
@@ -42,8 +41,15 @@ namespace SFCD_Battle_Viewer
 
         public bool PopulateBankList(string directoryPath)
         {
-            BankDirs = Directory.GetDirectories(directoryPath).ToList();
-            BankList = new ObservableCollection<string>(BankDirs.Select(d => new DirectoryInfo(d).Name));
+            BankDirs = Directory.GetDirectories(directoryPath);
+            BankList.Clear();
+            foreach (var dir in BankDirs)
+            {
+                BankDefinition temp = HardCodes.GetBankDefinition(new DirectoryInfo(dir).Name);
+                temp.DirectoryPath = dir;
+                BankList.Add(temp);
+            }
+            //BankList = new ObservableCollection<string>(BankDirs.Select(d => new DirectoryInfo(d).Name));
             return BankList.Count > 0;
         }
 
@@ -185,11 +191,12 @@ namespace SFCD_Battle_Viewer
         {
             if (e.RemovedItems.Count > 0)
             {
-                foreach (Polygon p in regions)
-                {
-                    p.Visibility = Visibility.Collapsed;
-                }
+                RemoveCombatantSelectionVisuals();
+                lstRegions.SelectedIndex = -1;
+                lstPoints.SelectedIndex = -1;
                 rectCursor.Visibility = Visibility.Collapsed;
+                gridCombatant.ItemsSource = new List<CombatantData>();
+                textAiDescription.Text = string.Empty;
             }
             if (e.AddedItems.Count > 0)
             {
@@ -231,20 +238,15 @@ namespace SFCD_Battle_Viewer
 
         private void SelectCombatant(CombatantListBoxItemTemplate item)
         {
+            RemoveCombatantSelectionVisuals();
+
             Image image = item.Image;
             CombatantEntry combatant = item.Combatant;
 
             //Select image
-            if (image == null)
-            {
-                rectCursor.Visibility = Visibility.Collapsed;
-            }
-            else
-            {
-                Canvas.SetLeft(rectCursor, Canvas.GetLeft(image) - 2);
-                Canvas.SetTop(rectCursor, Canvas.GetTop(image) - 2);
-                rectCursor.Visibility = Visibility.Visible;
-            }
+            Canvas.SetLeft(rectCursor, Canvas.GetLeft(image) - 2);
+            Canvas.SetTop(rectCursor, Canvas.GetTop(image) - 2);
+            rectCursor.Visibility = Visibility.Visible;
 
             //Select regions
             lstRegions.UnselectAll();
@@ -275,10 +277,6 @@ namespace SFCD_Battle_Viewer
             }
 
             //Highlight force members
-            foreach (CombatantListBoxItemTemplate x in lstHeroes.Items)
-            {
-                x.Image.Effect = null;
-            }
             if (combatant.IsHero == false)
             {
                 if (combatant.SpecialMove1 == CombatantEntry.SpecialMoveType.ForceMember)
@@ -292,10 +290,6 @@ namespace SFCD_Battle_Viewer
             }
 
             //Highlight monsters
-            foreach (CombatantListBoxItemTemplate x in lstMonsters.Items)
-            {
-                x.Image.Effect = null;
-            }
             if (combatant.IsHero == false)
             {
                 if (combatant.SpecialMove1 == CombatantEntry.SpecialMoveType.Monster)
@@ -310,7 +304,26 @@ namespace SFCD_Battle_Viewer
 
             //Show combatant data
             gridCombatant.ItemsSource = item.Combatant.GetCombatantData();
-            textAiDescription.Text = item.Combatant.GetAiDescription();
+            //textAiDescription.Text = item.Combatant.GetAiDescription();
+            textAiDescription.Text = string.Empty;
+            item.Combatant.PrintAiDescription(textAiDescription);
+        }
+
+        //Remove all selection visuals
+        private void RemoveCombatantSelectionVisuals()
+        {
+            //Cursor
+            rectCursor.Visibility = Visibility.Collapsed;
+            //Hero effect
+            foreach (CombatantListBoxItemTemplate x in lstHeroes.Items)
+            {
+                x.Image.Effect = null;
+            }
+            //Monster effect
+            foreach (CombatantListBoxItemTemplate x in lstMonsters.Items)
+            {
+                x.Image.Effect = null;
+            }
         }
 
         //Add a standard drop shadow effect to targets of the special AI move

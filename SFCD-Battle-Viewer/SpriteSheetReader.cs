@@ -34,6 +34,8 @@ namespace SFCD_Battle_Viewer
         {
             if (Path.Exists(pathBase + pathSpriteset))
             {
+                int book = HardCodes.GetBankDefinition(new DirectoryInfo(pathBase).Name).Book; //use the directory name to identify the book #
+
                 BinaryFile file = new BinaryFile(pathBase + pathSpriteset);
                 int heroCount = ByteConversion.ByteToInt(file.Data[0]);
                 int monsterCount = ByteConversion.ByteToInt(file.Data[1]);
@@ -45,14 +47,14 @@ namespace SFCD_Battle_Viewer
                 Heroes.Clear();
                 for (int i = 0; i < heroCount; i++)
                 {
-                    Heroes.Add(new CombatantEntry(file.GetByteChunk(n, 12), pathBase, true));
+                    Heroes.Add(new CombatantEntry(file.GetByteChunk(n, 12), pathBase, true, book));
                     n += 12;
                 }
                 //Monsters
                 Monsters.Clear();
                 for (int i = 0; i < monsterCount; i++)
                 {
-                    Monsters.Add(new CombatantEntry(file.GetByteChunk(n, 12), pathBase, false));
+                    Monsters.Add(new CombatantEntry(file.GetByteChunk(n, 12), pathBase, false, book));
                     n += 12;
                 }
                 //Regions
@@ -82,6 +84,14 @@ namespace SFCD_Battle_Viewer
             Point = 2,
             Monster = 4,
             None = 7
+        }
+
+        public enum SpawnRule
+        {
+            None,
+            RegionTriggered,
+            Continuous,
+            ContinuousRegionTriggered,
         }
 
         //1  Unit ID
@@ -114,23 +124,23 @@ namespace SFCD_Battle_Viewer
         public SpecialMoveType SpecialMove2 { get; set; }
         public int SpecialMoveTarget2 { get; set; }
         public int Unknown { get; set; }
-        public int SpawnCode { get; set; }
+        public SpawnRule SpawnCode { get; set; }
         public bool IsHero { get; set; }
         public BitmapImage Bitmap { get; set; } = null;
 
         public CombatantEntry() { }
 
-        public CombatantEntry(ByteChunk byteChunk, string pathBase, bool isMonster)
+        public CombatantEntry(ByteChunk byteChunk, string pathBase, bool isMonster, int book)
         {
-            PopulateFromByteChunk(byteChunk, pathBase, isMonster);
+            PopulateFromByteChunk(byteChunk, pathBase, isMonster, book);
         }
 
         public override string ToString()
         {
-            return UnitId.ToString() + "," + Xcord.ToString() + "," + Ycord.ToString() + "," + AiCode.ToString();
+            return string.Format("Id:{0} | Coord:({1},{2})", UnitId.ToString("00"), Xcord.ToString(), Ycord.ToString() , AiCode.ToString());
         }
 
-        public void PopulateFromByteChunk(ByteChunk byteChunk, string pathBase, bool isHero = false)
+        public void PopulateFromByteChunk(ByteChunk byteChunk, string pathBase, bool isHero, int book)
         {
 
             UnitId = ByteConversion.ByteToInt(byteChunk.Bytes[0]);
@@ -148,11 +158,11 @@ namespace SFCD_Battle_Viewer
             SpecialMoveTarget2 = GetSpecialMoveTarget(SpecialAi2);
             TriggerRegion2 = ByteConversion.ByteToInt(byteChunk.Bytes[9]);
             Unknown = ByteConversion.ByteToInt(byteChunk.Bytes[10]);
-            SpawnCode = ByteConversion.ByteToInt(byteChunk.Bytes[11]);
+            SpawnCode = (SpawnRule)byteChunk.Bytes[11];
 
             IsHero = isHero;
 
-            int spriteId = HardCodes.GetSpriteId(isHero ? UnitId : UnitId + 32);
+            int spriteId = HardCodes.GetSpriteId(isHero ? UnitId : UnitId + 32, book);
             string path = pathBase + pathMapSprite.Replace("000", spriteId.ToString("000"));
             if (System.IO.Path.Exists(path))
             {
@@ -204,7 +214,7 @@ namespace SFCD_Battle_Viewer
                 {
                     value = "";
                 }
-                if (value.GetType() == typeof(int) || value.GetType() == typeof(string) || value.GetType() == typeof(SpecialMoveType))
+                if (value.GetType() == typeof(int) || value.GetType() == typeof(string) || value.GetType() == typeof(SpecialMoveType) || value.GetType() == typeof(SpawnRule))
                 {
                     result.Add(new CombatantData(name, value.ToString()));
                 }
@@ -250,20 +260,27 @@ namespace SFCD_Battle_Viewer
         public void PrintAiDescription(TextBlock textBlock)
         {
             //Trigger region
-            textBlock.Inlines.Add(new Run("Trigger Rules") { TextDecorations = TextDecorations.Underline, FontWeight = FontWeights.Bold });
-            textBlock.Inlines.Add(GetAiTriggers() );
+            textBlock.Inlines.Add(new Run("Trigger Rules\n") { TextDecorations = TextDecorations.Underline, FontWeight = FontWeights.Bold });
+            textBlock.Inlines.Add(GetAiTriggers());
+            textBlock.Inlines.Add("\n");
+
 
             //AI Code Summary
-
+            textBlock.Inlines.Add(new Run("AI Summary\n") { TextDecorations = TextDecorations.Underline, FontWeight = FontWeights.Bold });
+            textBlock.Inlines.Add(GetAiSummary());
+            textBlock.Inlines.Add("\n");
 
             //AI Code Description
+            textBlock.Inlines.Add(new Run("AI Detail\n") { TextDecorations = TextDecorations.Underline, FontWeight = FontWeights.Bold });
+            textBlock.Inlines.Add(GetAiDetail());
+            textBlock.Inlines.Add("\n");
         }
 
         public string GetAiTriggers()
         {
             if (IsHero)
             {
-                return "Human controlled.";
+                return "Human controlled.\n";
             }
             else
             {
@@ -299,7 +316,7 @@ namespace SFCD_Battle_Viewer
         {
             if (IsHero)
             {
-                return "Human controlled.";
+                return "Human controlled.\n";
             }
             else
             {
@@ -317,7 +334,7 @@ namespace SFCD_Battle_Viewer
         {
             if (IsHero)
             {
-                return "Human controlled.";
+                return "Human controlled.\n";
             }
             else
             {
