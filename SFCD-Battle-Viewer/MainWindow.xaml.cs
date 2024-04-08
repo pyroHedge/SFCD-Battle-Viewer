@@ -21,6 +21,7 @@ namespace SFCD_Battle_Viewer
     public partial class MainWindow : Window
     {
         const string testDir = @"C:\Users\adams\Documents\GitHub\SFCD-Battle-Viewer\sfcd-assets";
+        const string pathAssets = @"sfcd-assets";
         const string pathMapImage = @"\map\1-layout.png";
         const int TILE_SIZE_IN_PIXELS = 24; //how large the map tiles are at full size
 
@@ -35,8 +36,19 @@ namespace SFCD_Battle_Viewer
 
         public MainWindow()
         {
-            PopulateBankList(testDir);
-            InitializeComponent();
+            string dir = Environment.ProcessPath; //this is the best method of finding the .exe location now -- it was only available in .NET Core 6.0 or later
+            dir = System.IO.Path.GetDirectoryName(dir);
+            dir = System.IO.Path.Combine(dir, pathAssets); 
+            if (System.IO.Path.Exists(dir))
+            {
+                PopulateBankList(dir);
+                InitializeComponent();
+            }
+            else
+            {
+                MessageBox.Show("No \"sfcd-assets\" folder found in " + dir + "\n\n Please place the \"sfcd-assets\" folder in the same directory as the executable.", "SFCD Battle Viewer", MessageBoxButton.OK, MessageBoxImage.Exclamation);
+                System.Windows.Application.Current.Shutdown();
+            }
         }
 
         public bool PopulateBankList(string directoryPath)
